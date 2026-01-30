@@ -34,6 +34,20 @@ CORS(app, resources={
 }, supports_credentials=False)
 
 
+# Fallback: ensure CORS headers are present on all responses
+@app.after_request
+def _ensure_cors_headers(response):
+    origin = request.headers.get("Origin")
+    if origin and origin.rstrip('/') in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        # Do not set credentials unless you explicitly need them
+        # response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+
 # ============================================================
 # JSON Serialization Boundary
 # ============================================================
