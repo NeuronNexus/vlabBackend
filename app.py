@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from typing import Dict, Any
 import numpy as np
+import os
 from flask_cors import CORS
 from core.orchestrator import (
     run_simulation,
@@ -11,18 +12,26 @@ from utils.validators import validate_simulation_inputs
 app = Flask(__name__)
 
 # Configure CORS - allow requests from frontend
+allowed_origins = [
+    "http://localhost:8080",
+    "http://localhost:5173",
+    "http://127.0.0.1:8080",
+    "http://127.0.0.1:5173",
+]
+
+# Allow setting the frontend origin via environment variable (no trailing slash)
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    frontend_url = frontend_url.rstrip('/')
+    allowed_origins.append(frontend_url)
+
 CORS(app, resources={
     r"/*": {
-        "origins": [
-            "http://localhost:8080",
-            "http://localhost:5173",
-            "http://127.0.0.1:8080",
-            "http://127.0.0.1:5173"
-        ],
+        "origins": allowed_origins,
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
+        "allow_headers": ["Content-Type", "Authorization"]
     }
-})
+}, supports_credentials=False)
 
 
 # ============================================================
@@ -224,9 +233,10 @@ if __name__ == "__main__":
     print("=" * 60)
     print("🚀 SoleSense Backend API Starting...")
     print("=" * 60)
-    print(f"📍 API URL: http://127.0.0.1:5000")
-    print(f"🔍 Health Check: http://127.0.0.1:5000/health")
-    print(f"📊 Simulate: POST http://127.0.0.1:5000/simulate")
-    print(f"⚖️  Compare: POST http://127.0.0.1:5000/compare")
+    print(f"📍 API URL: http://0.0.0.0:5000")
+    print(f"🔍 Health Check: http://0.0.0.0:5000/health")
+    print(f"📊 Simulate: POST http://0.0.0.0:5000/simulate")
+    print(f"⚖️  Compare: POST http://0.0.0.0:5000/compare")
     print("=" * 60)
-    app.run(debug=True, host='127.0.0.1', use_reloader=False,port=5000)
+    debug_mode = os.getenv("FLASK_ENV") == "development"
+    app.run(debug=debug_mode, host='0.0.0.0', use_reloader=False, port=int(os.getenv("PORT", 5000)))
